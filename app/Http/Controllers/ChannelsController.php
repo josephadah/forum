@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Thread;
 use Illuminate\Http\Request;
+use App\Channel;
 
-class ThreadController extends Controller
+class ChannelsController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -41,21 +41,28 @@ class ThreadController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param  \App\Thread  $thread
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show(Thread $thread)
+    public function show(Channel $channel)
     {
-        //
+        // if($channel->exists)
+        // {
+        //     $threads = $channel->threads()->latest()->get();
+        // } else {
+        //     $threads = Thread::latest()->get();
+        // }
+
+        // return view('threads.index', compact('threads'));
     }
 
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  \App\Thread  $thread
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit(Thread $thread)
+    public function edit($id)
     {
         //
     }
@@ -64,10 +71,10 @@ class ThreadController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Thread  $thread
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Thread $thread)
+    public function update(Request $request, $id)
     {
         //
     }
@@ -75,10 +82,10 @@ class ThreadController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Thread  $thread
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Thread $thread)
+    public function destroy($id)
     {
         //
     }

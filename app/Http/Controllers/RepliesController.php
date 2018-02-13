@@ -4,17 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Reply;
 use Illuminate\Http\Request;
+use App\Thread;
 
-class ReplyController extends Controller
+class RepliesController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
+    public function __construct()
     {
-        //
+        $this->middleware('auth');
     }
 
     /**
@@ -33,9 +29,22 @@ class ReplyController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store($channel, Thread $thread)
     {
-        //
+        $this->validate(request(), [
+            'body' => 'required'
+        ]);
+
+        $reply = $thread->addReply([
+            'body' => request('body'),
+            'user_id' => auth()->id()
+        ]);
+
+        if(request()->expectsJson()) {
+            return $reply;
+        }
+
+        return back()->with('flash', 'Replied successfully!!');
     }
 
     /**
@@ -67,9 +76,11 @@ class ReplyController extends Controller
      * @param  \App\Reply  $reply
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Reply $reply)
+    public function update(Reply $reply)
     {
-        //
+        $this->authorize('update', $reply);
+        
+        $reply->update(request(['body']));
     }
 
     /**
@@ -80,6 +91,15 @@ class ReplyController extends Controller
      */
     public function destroy(Reply $reply)
     {
-        //
+        $this->authorize('update', $reply);
+
+        // $reply->favorites()->where('favorited_id', $reply->id)->delete();
+        $reply->delete();
+
+        if(request()->expectsJson()) {
+            return response(['status' => 'Reply Deleted']);
+        }
+
+        return back();
     }
 }

@@ -24,6 +24,21 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token',
+        'password', 'remember_token', 'email',
     ];
+
+    public function getRouteKeyName()
+    {
+        return 'name';
+    }
+
+    public function threads()
+    {
+        return $this->hasMany('App\Thread');
+    }
+
+    public function activity()
+    {
+        return $this->hasMany(Activity::class);
+    }
 }

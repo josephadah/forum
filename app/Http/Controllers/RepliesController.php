@@ -5,12 +5,21 @@ namespace App\Http\Controllers;
 use App\Reply;
 use Illuminate\Http\Request;
 use App\Thread;
+use Gate;
+use App\Http\Requests\CreatePostRequest;
 
 class RepliesController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth');
+        $this->middleware('auth', ['except' => 'index']);
+    }
+
+    public function index($channel, Thread $thread)
+    {
+        if(request()->expectsJson()) {
+            return $thread->replies()->paginate(5);
+        }
     }
 
     /**
@@ -29,22 +38,19 @@ class RepliesController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @return \Illuminate\Http\Response
      */
-    public function store($channel, Thread $thread)
+    public function store($channel, Thread $thread, CreatePostRequest $form)
     {
-        $this->validate(request(), [
-            'body' => 'required'
-        ]);
+        if(Gate::denies('create', new Reply)) {
+            return response(
+                'You are posting too frequently. Please try again after few seconds.', 
+                422
+            );
+        }
 
-        $reply = $thread->addReply([
+        return $thread->addReply([
             'body' => request('body'),
             'user_id' => auth()->id()
         ]);
-
-        if(request()->expectsJson()) {
-            return $reply;
-        }
-
-        return back()->with('flash', 'Replied successfully!!');
     }
 
     /**
@@ -79,6 +85,8 @@ class RepliesController extends Controller
     public function update(Reply $reply)
     {
         $this->authorize('update', $reply);
+
+        $this->validate(request(), ['body' => 'required | spamfree']);
         
         $reply->update(request(['body']));
     }

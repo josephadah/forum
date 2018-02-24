@@ -21,6 +21,9 @@
 
     <!-- Styles -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+
+    @yield('header')
+
     <style>
         body {
             margin-bottom: 20px;

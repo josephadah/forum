@@ -23,19 +23,41 @@ class CreateThreadsTest extends TestCase
           ->assertRedirect('/login');
 	}
 
+
+    /** @test */
+    function an_unconfirmed_user_can_not_create_a_thread()
+    {
+      $this->be($user = factory('App\User')->create());
+
+      $this->assertFalse($user->confirmed);
+
+      $thread = factory('App\Thread')->make();
+
+      $this->post('/threads', $thread->toArray())
+            ->assertRedirect('/threads');
+
+      $this->assertDatabaseMissing('threads', $thread->body);
+    }
+
+
   	/** @test */
-  	function an_authenticated_user_can_create_a_thread()
+  	function an_authenticated_and_confirm_user_can_create_a_thread()
   	{
-  		$this->actingAs(factory('App\User')->create());
+  		$this->be($user = factory('App\User')->create());
+
+      $user->confirmed = true;
 
   		$thread = factory('App\Thread')->create();
 
   		$response = $this->post('/threads', $thread->toArray());
 
+      $this->assertTrue($user->confirmed);
+
   		$this->get($response->headers->get('location'))
   		->assertSee($thread->title)
   		->assertSee($thread->body);
   	}
+
 
     /** @test */
     function an_unauthorized_user_cannot_delete_a_thread()
@@ -70,7 +92,20 @@ class CreateThreadsTest extends TestCase
       $this->assertDatabaseMissing('replies', ['id' => $reply->id]);
 
       $this->assertEquals(0, Activity::count());
+    }
 
+    /** @test */
+    function an_authenticated_user_must_confirmed_their_email_before_publishing_thread()
+    {
+      $this->withoutExceptionHandling();
+      
+      $this->be($user = factory('App\User')->create());
+
+      $thread = factory('App\Thread')->make(['user_id' => $user->id]);
+
+      $this->post('/threads', $thread->toArray())
+          ->assertRedirect('/threads')
+          ->assertSessionHas('flash', 'You must confirm your email address to publish post.');
     }
 
 }

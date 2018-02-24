@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Exception;
 
 class ParticipateInThreadTest extends TestCase
 {
@@ -15,7 +16,7 @@ class ParticipateInThreadTest extends TestCase
 	{
       $this->withExceptionHandling();
 
-		$this->post('/threads/1/replies', [])
+		$this->post('/threads/channel/1/replies', [])
          ->assertRedirect('/login');
 	}
 
@@ -29,11 +30,10 @@ class ParticipateInThreadTest extends TestCase
    	$reply = factory('App\Reply')->make();
 
    	//when the user adds a reply to the thread
-   	$this->post('/threads/'.$thread->id.'/replies', $reply->toArray());
+   	$this->post('/threads/channel/'.$thread->id.'/replies', $reply->toArray());
 
-   	//then their reply should be visible on the page
-   	$this->get($thread->path())
-   		->assertSee($reply->body);
+   	$this->assertDatabaseHas('replies', ['thread_id' => $thread->id]);
+      $this->assertEquals(1, $thread->fresh()->replies_count);
    }
 
    /** @test */
@@ -64,6 +64,7 @@ class ParticipateInThreadTest extends TestCase
       $this->delete('/reply/'.$reply->id)
             ->assertStatus(302);
       $this->assertDatabaseMissing('replies', ['id' => $reply->id]);
+      $this->assertEquals(0, $reply->thread->fresh()->replies_count);
    }
 
    /** @test */
@@ -95,4 +96,37 @@ class ParticipateInThreadTest extends TestCase
       $this->patch("/reply/{$reply->id}", ['body' => $updatedBody]);
       $this->assertDatabaseHas('replies', ['id' => $reply->id, 'body' => $updatedBody]);
    }
+
+    /** @test */
+    function replies_that_contain_spam_may_not_be_created()
+    {
+        $this->be(factory('App\User')->create());
+
+        $thread = factory('App\Thread')->create();
+        $reply = factory('App\Reply')->make([
+            'body' => 'Yahoo Customer Support'
+        ]);
+
+        $this->json('post', $thread->path() . '/replies', $reply->toArray())
+          ->assertStatus(422);
+    }
+
+    /** @test */
+    function a_user_may_only_reply_once_per_minute()
+    {
+        $this->withExceptionHandling();
+        $this->signIn();
+
+        $thread = factory('App\Thread')->create();
+        $reply = factory('App\Reply')->make([
+            'body' => 'Some reply comment'
+        ]);
+
+        $this->post($thread->path() . '/replies', $reply->toArray())
+            ->assertStatus(200);
+
+        $this->json('post', $thread->path() . '/replies', $reply->toArray())
+            ->assertStatus(422);
+    }
+
 }

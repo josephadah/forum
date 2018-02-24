@@ -3,7 +3,7 @@
         <div class="panel-heading level">
             <h5 class="flex">
                 <a :href="'/profiles/'+data.owner.name" v-text="data.owner.name"></a> 
-                reply, {{ data.created_at }}...
+                reply, <span v-text="ago"></span>...
             </h5>
             
             <favorite :reply="data" :authcheck="sigedIn"></favorite>
@@ -11,13 +11,15 @@
         </div>
         <div class="panel-body">
             <div v-if="editing">
-                <div class="form-group">
-                    <textarea class="form-control" rows="1" v-model="body"></textarea>
-                </div>
-                <button class="btn btn-primary btn-xs" @click="update">Update</button>
-                <button class="btn btn-link btn-xs" @click="editing = false">Cancel</button>
+            	<form @submit="update">
+	                <div class="form-group">
+	                    <textarea class="form-control" rows="1" v-model="body" required></textarea>
+	                </div>
+	                <button class="btn btn-primary btn-xs">Update</button>
+	                <button class="btn btn-link btn-xs" @click="editing = false" type="button">Cancel</button>
+	            </form>
             </div>
-            <div v-else v-text="body"></div>
+            <div v-else v-html="body"></div>
             
         </div>
             <div class="panel-footer level" v-if="canUpdate">
@@ -28,6 +30,7 @@
 </template>
 
 <script>
+	import moment from 'moment';
 	import Favorite from "./Favorite.vue";
 
 	export default {
@@ -43,6 +46,10 @@
 		}, 
 
 		computed: {
+			ago() {
+				return moment(this.data.created_at).fromNow();
+			},
+
 			sigedIn() {
 				return window.App.Auth;
 			},
@@ -56,6 +63,10 @@
 			update() {
 				axios.patch('/reply/' + this.data.id, {
 					body: this.body
+				})
+				.catch(error => {
+					flash(error.response.data, 'danger');
+					this.editing = true;
 				});
 
 				this.editing = false;

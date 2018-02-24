@@ -30,14 +30,14 @@ class ReadThreadsTest extends TestCase
     }
 
     /** @test */
-    public function a_user_can_read_reply_associated_to_a_thread()
-    {
-    	$reply = factory('App\Reply')
-    	->create(['thread_id' => $this->thread->id, 'user_id' => $this->thread->user_id]);
+    // public function a_user_can_read_reply_associated_to_a_thread()
+    // {
+    // 	$reply = factory('App\Reply')
+    // 	->create(['thread_id' => $this->thread->id, 'user_id' => $this->thread->user_id]);
 
-    	$this->get($this->thread->path())
-    	->assertSee($reply->body);
-    } 
+    // 	$this->get($this->thread->path())
+    // 	->assertSee($reply->body);
+    // } 
 
     /** @test */
     public function a_user_can_filter_threads_according_to_a_channel()
@@ -82,7 +82,30 @@ class ReadThreadsTest extends TestCase
         $response = $this->getJson('threads?popular=1')->json();
 
         // Then they should be returned from most replies to least
-        $this->assertEquals([3, 2, 0], array_column($response, 'replies_count'));
+        $this->assertEquals([3, 2, 0], array_column($response['data'], 'replies_count'));
 
+    }
+
+    /** @test */ 
+    function a_user_can_filter_threads_by_those_that_are_unanswered()
+    {
+        $thread = factory('App\Thread')->create();
+        $reply = factory('App\Reply')->create(['thread_id' => $thread->id]);
+        
+        $response = $this->getJson('threads?unanswered=1')->json();
+        $this->assertCount(1, $response['data']);
+
+    }
+
+    /** @test */
+    function a_user_can_request_all_given_replies_for_a_given_thread()
+    {
+        $thread = factory('App\Thread')->create();
+        $reply = factory('App\Reply')->create(['thread_id' => $thread->id]);
+
+        $response = $this->getJson($thread->path() . '/replies')->json();
+
+        $this->assertCount(1, $response['data']);
+        $this->assertEquals(1, $response['total']);
     }
 }

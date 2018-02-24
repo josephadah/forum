@@ -2,9 +2,12 @@
 
 namespace App;
 
-use Illuminate\Database\Eloquent\Model;
+use App\Events\ThreadRecievedNewReply;
 use App\Filters\ThreadFilters;
+use App\Notifications\ThreadWasUpdated;
 use App\RecordsActivity;
+use App\Visit;
+use Illuminate\Database\Eloquent\Model;
 
 class Thread extends Model
 {
@@ -13,13 +16,15 @@ class Thread extends Model
     protected $guarded = [];
     protected $with = ['creator', 'channel'];
 
+    protected $appends = ['isSubscribeTo'];
+
     protected static function boot() 
     {
         parent::boot();
 
-        static::addGlobalScope('replyCount', function ($builder) {
-            $builder->withCount('replies');
-        });
+        // static::addGlobalScope('replyCount', function ($builder) {
+        //     $builder->withCount('replies');
+        // });
 
         static::deleting(function ($thread) {
             $thread->replies->each(function ($reply) {
@@ -46,7 +51,11 @@ class Thread extends Model
 
     public function addReply($reply)
     {
-        return $this->replies()->create($reply)->load('owner');
+        $reply = $this->replies()->create($reply);
+
+        event(new ThreadRecievedNewReply($reply));
+
+        return $reply;
     }
 
     public function channel()
@@ -57,5 +66,43 @@ class Thread extends Model
    public function scopeFilter($query, ThreadFilters $filters)
     {
         return $filters->apply($query);
+    }
+
+    public function subscribe($user_id = null) 
+    {
+        $this->subscriptions()->create([
+            'user_id' => $user_id ?: auth()->id()
+        ]);
+
+        return $this;
+    }
+
+    public function unsubscribe($user_id = null) 
+    {
+        $this->subscriptions()
+        ->where('user_id', $user_id ?: auth()->id())
+        ->delete();
+    }
+
+    public function subscriptions() 
+    {
+        return $this->hasMany('App\ThreadSubscription');
+    }
+
+    public function getIsSubscribeToAttribute()
+    {
+        return $this->subscriptions()->where('user_id', auth()->id())->exists();
+    }
+
+    public function hasUpdatesFor()
+    {
+        $key = auth()->user()->visitedThreadCacheKey($this);
+
+        return $this->updated_at > cache($key);
+    }
+
+    public function visits()
+    {
+        return new Visit($this);
     }
 }

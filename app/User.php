@@ -4,6 +4,7 @@ namespace App;
 
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use App\Reply;
 
 class User extends Authenticatable
 {
@@ -15,7 +16,11 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'password',
+        'name', 'email', 'password', 'avatar_path', 'confirmation_token', 'confirmed',
+    ];
+
+    protected $casts = [
+        'confirmed' => 'boolean'
     ];
 
     /**
@@ -32,6 +37,13 @@ class User extends Authenticatable
         return 'name';
     }
 
+    public function confirm()
+    {
+        $this->confirmed = true;
+
+        $this->save();
+    }
+
     public function threads()
     {
         return $this->hasMany('App\Thread');
@@ -40,5 +52,33 @@ class User extends Authenticatable
     public function activity()
     {
         return $this->hasMany(Activity::class);
+    }
+
+    public function visitedThreadCacheKey($thread)
+    {
+        return sprintf("users.%s.visits.%s", $this->id, $thread->id);
+    }
+
+    public function readThread($thread)
+    {
+        // $this->visitedThreadCacheKey($thread);
+
+        cache()->forever(
+            $this->visitedThreadCacheKey($thread), 
+            \Carbon\Carbon::now()
+        );
+    }
+
+    public function lastReply()
+    {
+        return $this->hasOne(Reply::class)->latest();
+    }
+
+    public function getAvatarPathAttribute($avatar)
+    {
+        if (! $avatar) {
+            return asset("storage/avatars/default.jpg");
+        }
+        return asset("storage/" . $avatar);
     }
 }

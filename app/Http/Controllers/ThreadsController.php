@@ -2,23 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Thread;
 use App\Channel;
-use Illuminate\Http\Request;
 use App\Filters\ThreadFilters;
+use App\Thread, App\Trending;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redis;
 
 class ThreadsController extends Controller
 {
     public function __construct()
     {
         $this->middleware('auth')->except(['index', 'show']);
+        $this->middleware('must-be-confirmed', ['only' => 'store']);
     }
     /**
      * Display a listing of the resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function index(Channel $channel, ThreadFilters $filters)
+    public function index(Channel $channel, ThreadFilters $filters, Trending $trending)
     {
         $threads = $this->getThreads($channel, $filters);
 
@@ -26,18 +29,10 @@ class ThreadsController extends Controller
             return $threads;
         }
 
-        return view('threads.index', compact('threads'));
-
-        // if($username= request('by'))
-        // {
-        //     $user = \App\User::where('name', $username)->firstOrFail();
-
-        //     $threads = Thread::where('user_id', $user->id);
-        // }
-
-        // $threads = $threads->get();
-
-        // return view('threads.index', compact('threads'));
+        return view('threads.index', [
+            'threads' => $threads, 
+            'trending' => $trending->get()
+        ]);
     }
 
     /**
@@ -58,11 +53,17 @@ class ThreadsController extends Controller
      */
     public function store(Request $request)
     {
+        // if (! auth()->user()->confirmed) {
+        //     return redirect('/threads')->with('flash', 'You must confirm your email address to publish post.');
+        // }
+
         $this->validate($request, [
-            'title' => 'required',
-            'body'  => 'required',
+            'title' => 'required | spamfree',
+            'body'  => 'required | spamfree',
             'channel_id' => 'required|exists:channels,id'
         ]);
+
+        // (new Spam)->detect(request('body'));
 
        $thread = Thread::create([
             'user_id' => auth()->id(),
@@ -81,12 +82,17 @@ class ThreadsController extends Controller
      * @param  \App\Thread  $thread
      * @return \Illuminate\Http\Response
      */
-    public function show($channel, Thread $thread)
+    public function show($channel, Thread $thread, Trending $trending)
     {
-        return view('threads.show', [
-            'thread' => $thread,
-            'replies' => $thread->replies()->paginate(10)
-        ]);
+        if(auth()->check()){
+            auth()->user()->readThread($thread);
+        }
+
+        $trending->push($thread);
+        
+        $thread->visits()->record();
+
+        return view('threads.show', compact('thread'));
     }
 
     /**
@@ -138,7 +144,7 @@ class ThreadsController extends Controller
             $threads = Thread::latest();
         }
 
-        $threads = $threads->filter($filters)->get();
+        $threads = $threads->filter($filters)->paginate(20);
 
         return $threads;
     }

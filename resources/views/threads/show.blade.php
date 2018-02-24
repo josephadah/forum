@@ -1,5 +1,9 @@
 @extends('layouts.app')
 
+@section('header')
+    <link href="/css/vendor/jquery.atwho.css" rel="stylesheet">
+@endsection
+
 @section('content')
 <thread-view :initial-replies-count="{{ $thread->replies_count }}" inline-template>
     <div class="container">
@@ -8,6 +12,7 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">
                         <h3>{{ $thread->title }}</h3>
+                        <img src="{{ $thread->creator->avatar_path }}" alt="{{ $thread->creator->name }}" width="30" height="30" style="float:left; margin-right: 5px;">
                         <p>by: <a href="{{ route('profile', $thread->creator->name) }}">{{ $thread->creator->name }}</a>, {{ $thread->created_at->diffForHumans() }} 
                         </p>
 
@@ -27,9 +32,7 @@
 
                     <div class="row">
                         <div class="col-md-10 col-md-offset-1">
-                            <replies :data="{{ $thread->replies }}" 
-                                @added="replies_count++"
-                                @removed="replies_count--"></replies>
+                            <replies @added="replies_count++" @removed="replies_count--"></replies>
                         </div>
                     </div>
             </div>
@@ -41,6 +44,10 @@
                         <p>This thread was published {{ $thread->created_at->diffForHumans() }}, by 
                             <a href="#">{{ $thread->creator->name }}</a>, 
                             and has <span v-text="replies_count"></span> {{ str_plural('comment', $thread->replies_count) }}</p>
+
+                            <subscribe-button 
+                            :subscription-status="{{ json_encode($thread->isSubscribeTo) }}">
+                            </subscribe-button>
                     </div>
                 </div>
             </div>

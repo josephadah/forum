@@ -47,6 +47,10 @@ class RepliesController extends Controller
             );
         }
 
+        if($thread->locked) {
+            return response('This Thread is Locked', 422);
+        }
+
         return $thread->addReply([
             'body' => request('body'),
             'user_id' => auth()->id()

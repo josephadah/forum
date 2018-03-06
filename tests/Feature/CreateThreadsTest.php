@@ -2,10 +2,11 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
-use Illuminate\Foundation\Testing\WithFaker;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Activity;
+use App\Thread;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Foundation\Testing\WithFaker;
+use Tests\TestCase;
 
 class CreateThreadsTest extends TestCase
 {
@@ -27,6 +28,7 @@ class CreateThreadsTest extends TestCase
     /** @test */
     function an_unconfirmed_user_can_not_create_a_thread()
     {
+      $this->withoutExceptionHandling();
       $this->be($user = factory('App\User')->create());
 
       $this->assertFalse($user->confirmed);
@@ -35,8 +37,7 @@ class CreateThreadsTest extends TestCase
 
       $this->post('/threads', $thread->toArray())
             ->assertRedirect('/threads');
-
-      $this->assertDatabaseMissing('threads', $thread->body);
+      $this->assertDatabaseMissing('threads', ['body' => $thread->body]);
     }
 
 
@@ -107,5 +108,22 @@ class CreateThreadsTest extends TestCase
           ->assertRedirect('/threads')
           ->assertSessionHas('flash', 'You must confirm your email address to publish post.');
     }
+
+    // /** @test */
+    // function a_thread_requires_a_unique_slug()
+    // {
+    //   $this->withoutExceptionHandling();
+    //   $this->signIn();
+
+    //   $thread = factory('App\Thread')->create(['title' => 'Foo Title', 'slug' => 'foo-title']);
+
+    //   $this->assertEquals($thread->fresh()->slug, 'foo-title');
+
+    //   $thread2 = factory('App\Thread')->create(['title' => 'Foo Title', 'slug' => 'foo-title']);
+
+    //   $this->post('/threads', $thread2->toArray());
+
+    //   $this->assertTrue(Thread::whereSlug('foo-title-2')->exists());
+    // }
 
 }

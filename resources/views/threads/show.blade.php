@@ -5,30 +5,12 @@
 @endsection
 
 @section('content')
-<thread-view :initial-replies-count="{{ $thread->replies_count }}" inline-template>
+<thread-view :thread="{{ $thread }}" inline-template v-cloak>
     <div class="container">
         <div class="row">
             <div class="col-md-8">
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3>{{ $thread->title }}</h3>
-                        <img src="{{ $thread->creator->avatar_path }}" alt="{{ $thread->creator->name }}" width="30" height="30" style="float:left; margin-right: 5px;">
-                        <p>by: <a href="{{ route('profile', $thread->creator->name) }}">{{ $thread->creator->name }}</a>, {{ $thread->created_at->diffForHumans() }} 
-                        </p>
-
-                        @can ('update', $thread)
-                            <form method="POST" action="{{ route('threads.delete', [$thread->channel, $thread]) }}">
-                                {{ csrf_field() }}
-                                {{ method_field('DELETE') }}
-                                <button class="btn btn-danger btn-xs" type="submit">Delete Thread</button>
-                            </form>
-                        @endcan
-                    </div>
-
-                    <div class="panel-body">
-                        {{ $thread->body }}
-                    </div>
-                </div>
+                
+                @include('threads._main_thread')
 
                     <div class="row">
                         <div class="col-md-10 col-md-offset-1">
@@ -46,8 +28,13 @@
                             and has <span v-text="replies_count"></span> {{ str_plural('comment', $thread->replies_count) }}</p>
 
                             <subscribe-button 
-                            :subscription-status="{{ json_encode($thread->isSubscribeTo) }}">
+                            :subscription-status="{{ json_encode($thread->isSubscribeTo) }}" v-if="signedIn">
                             </subscribe-button>
+
+                            <button class="btn btn-sm btn-default" @click="toggleLock" 
+                                v-if="authorize('isAdmin')"
+                                v-text="locked ? 'Unlock' : 'Lock'">Lock
+                            </button>
                     </div>
                 </div>
             </div>

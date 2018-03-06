@@ -1,12 +1,12 @@
 <template>
-    <div :id="'reply-'+id" class="panel panel-default">
+    <div :id="'reply-'+id" class="panel" :class="isBest ? 'panel-success' : 'panel-default'">
         <div class="panel-heading level">
             <h5 class="flex">
-                <a :href="'/profiles/'+data.owner.name" v-text="data.owner.name"></a> 
+                <a :href="'/profiles/'+reply.owner.name" v-text="reply.owner.name"></a> 
                 reply, <span v-text="ago"></span>...
             </h5>
             
-            <favorite :reply="data" :authcheck="sigedIn"></favorite>
+            <favorite :reply="reply"></favorite>
 
         </div>
         <div class="panel-body">
@@ -22,9 +22,18 @@
             <div v-else v-html="body"></div>
             
         </div>
-            <div class="panel-footer level" v-if="canUpdate">
-                <button class="btn btn-primary btn-xs mr-1" @click="editing = true">Edit</button>
-                <button class="btn btn-danger btn-xs" @click="destroy">Delete</button>
+            <div class="panel-footer level">
+            	<div v-if="authorize('updateReply', reply)">
+	                <button class="btn btn-primary btn-xs mr-1" @click="editing = true">Edit</button>
+	                <button class="btn btn-danger btn-xs" @click="destroy">Delete</button>
+	            </div>
+	            <div class="ml-a" v-if="authorize('updateThread', reply.thread)">
+		            <button class="btn btn-xs btn-primary ml-a" 
+		            	@click="markBestReply" 
+		            	v-show="! isBest">
+		            	Best Reply?
+		            </button>
+		        </div>
             </div>
     </div>
 </template>
@@ -34,34 +43,33 @@
 	import Favorite from "./Favorite.vue";
 
 	export default {
-		props: ['data'],
+		props: ['reply'],
 		components: { Favorite },
 
 		data() {
 			return {
 				editing: false,
-				body: this.data.body,
-				id: this.data.id,
+				body: this.reply.body,
+				id: this.reply.id,
+				isBest: this.reply.isBest, 
 			}
 		}, 
 
 		computed: {
 			ago() {
-				return moment(this.data.created_at).fromNow();
-			},
-
-			sigedIn() {
-				return window.App.Auth;
-			},
-
-			canUpdate() {
-				return this.authorize(user => this.data.user_id == user.id);
+				return moment(this.reply.created_at).fromNow();
 			}
+		},
+
+		created() {
+			window.events.$on('best-reply-selected', id => {
+				this.isBest = (id === this.reply.id)
+			});
 		},
 
 		methods: {
 			update() {
-				axios.patch('/reply/' + this.data.id, {
+				axios.patch('/reply/' + this.reply.id, {
 					body: this.body
 				})
 				.catch(error => {
@@ -75,11 +83,17 @@
 			},
 
 			destroy() {
-				axios.delete('/reply/' + this.data.id);
+				axios.delete('/reply/' + this.reply.id);
 
-				this.$emit('deleted', this.data.id);
+				this.$emit('deleted', this.reply.id);
 				// $(this.$el).fadeOut(300);
 				flash('Reply deleted successfully!');
+			},
+
+			markBestReply() {
+				axios.post('/reply/' + this.reply.id + '/best');
+
+				window.events.$emit('best-reply-selected', this.reply.id);
 			}
 		}
 	}

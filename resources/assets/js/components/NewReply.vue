@@ -30,12 +30,6 @@
 			}
 		}, 
 
-		computed: {
-			signedIn() {
-				return window.App.Auth;
-			}
-		},
-
 		mounted() {
 			$('#body').atwho({
 				at: "@", 

@@ -6,10 +6,15 @@
     "type": "project",
     "require": {
         "php": ">=7.0.0",
+        "algolia/algoliasearch-client-php": "^1.25",
+        "cviebrock/laravel-elasticsearch": "^3.1",
         "fideloper/proxy": "~3.3",
         "laravel/framework": "5.5.*",
+        "laravel/scout": "^3.0|^4.0",
         "laravel/tinker": "~1.0",
-        "predis/predis": "^1.1"
+        "predis/predis": "^1.1",
+        "elasticsearch/elasticsearch": "^5.0|~6.0", 
+        "stevebauman/purify": "2.0.*" 
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.1",

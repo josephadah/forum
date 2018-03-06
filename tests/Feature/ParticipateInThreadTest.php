@@ -23,6 +23,7 @@ class ParticipateInThreadTest extends TestCase
    /** @test */
    public function an_authenticated_user_can_participate_in_a_thread()
    {
+    $this->withoutExceptionHandling();
    	$this->be($user = factory('App\User')->create());
 
    	$thread = factory('App\Thread')->create();
@@ -30,7 +31,7 @@ class ParticipateInThreadTest extends TestCase
    	$reply = factory('App\Reply')->make();
 
    	//when the user adds a reply to the thread
-   	$this->post('/threads/channel/'.$thread->id.'/replies', $reply->toArray());
+   	$this->post('/threads/channel/'.$thread->slug.'/replies', $reply->toArray());
 
    	$this->assertDatabaseHas('replies', ['thread_id' => $thread->id]);
       $this->assertEquals(1, $thread->fresh()->replies_count);

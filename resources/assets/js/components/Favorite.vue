@@ -1,5 +1,5 @@
 <template>
-	<button :class="classes" @click="toggle" v-if="auth">
+	<button :class="classes" @click="toggle" v-if="signedIn">
 	    <span class="glyphicon glyphicon-heart"></span>
 	    <span v-text="favoritesCount"></span>
 	</button>
@@ -14,13 +14,12 @@
 
 <script>
 	export default {
-		props: ['reply', 'authcheck'],
+		props: ['reply'],
 
 		data() {
 			return {
 				favoritesCount: this.reply.favoritesCount,
 				isFavorited: this.reply.isFavorited, 
-				auth: this.authcheck,
 				link: "/replies/" + this.reply.id + "/favorites"
 			}
 		}, 

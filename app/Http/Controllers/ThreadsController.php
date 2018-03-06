@@ -53,23 +53,20 @@ class ThreadsController extends Controller
      */
     public function store(Request $request)
     {
-        // if (! auth()->user()->confirmed) {
-        //     return redirect('/threads')->with('flash', 'You must confirm your email address to publish post.');
-        // }
-
         $this->validate($request, [
             'title' => 'required | spamfree',
             'body'  => 'required | spamfree',
             'channel_id' => 'required|exists:channels,id'
         ]);
 
-        // (new Spam)->detect(request('body'));
+        $slug = (new Thread)->makeSlug();
 
-       $thread = Thread::create([
+        $thread = Thread::create([
             'user_id' => auth()->id(),
             'channel_id' => $request->channel_id,
             'title' => $request->title,
-            'body' => $request->body
+            'body' => $request->body, 
+            'slug' => $slug
         ]);
 
        return redirect($thread->path())
@@ -113,9 +110,14 @@ class ThreadsController extends Controller
      * @param  \App\Thread  $thread
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Thread $thread)
+    public function update($channel, Thread $thread)
     {
-        //
+        $this->authorize('update', $thread);
+        
+        $thread->update(request()->validate([
+            'title' => 'required | spamfree',
+            'body'  => 'required | spamfree',
+        ]));
     }
 
     /**

@@ -44,11 +44,13 @@ class RegistrationTest extends TestCase
     	$this->assertNotNull($user->confirmation_token);
 
     	// let the user confirm their account. 
-    	$response = $this->get('/register/confirm?token=' . $user->confirmation_token);
+    	$response = $this->get('/register/confirm?token=' . $user->confirmation_token)
+            ->assertRedirect('/threads');
 
-    	$this->assertTrue($user->fresh()->confirmed);
+        $this->assertTrue($user->fresh()->confirmed);
+    	$this->assertNull($user->fresh()->confirmation_token);
 
-    	$response->assertRedirect('/threads');
+    	
     }
 
     /** @test */ 

@@ -13,11 +13,24 @@ Route::get('/threads/{channel}/{thread}', 'ThreadsController@show')->name('threa
 Route::delete('/threads/{channel}/{thread}', 
 		'ThreadsController@destroy')
 		->name('threads.delete');
+Route::patch('/threads/{channel}/{thread}', 
+		'ThreadsController@update')
+		->name('threads.update');
+
+Route::post('/locked-threads/{thread}', 'LockedThreadsController@store')
+		->name('locked-threads.store')
+		->middleware('admin');
+Route::delete('/locked-threads/{thread}', 'LockedThreadsController@destroy')
+		->name('locked-threads.delete')
+		->middleware('admin');
 
 Route::post('/threads/{channel}/{thread}/subscriptions', 'ThreadSubscriptionsController@store')->middleware('auth');
 Route::delete('/threads/{channel}/{thread}/subscriptions', 'ThreadSubscriptionsController@destroy')->middleware('auth');
 Route::delete('/reply/{reply}', 'RepliesController@destroy')->name('replies.delete');
 Route::patch('/reply/{reply}', 'RepliesController@update')->name('replies.update');
+
+Route::post('/reply/{reply}/best', 'BestRepliesController@store')->name('best-replies.store');
+
 Route::get('/replies/{reply}/favorites', 'FavoritesController@show');
 Route::post('/replies/{reply}/favorites', 'FavoritesController@store')->name('favorites.store');
 Route::delete('/replies/{reply}/favorites', 'FavoritesController@destroy')->name('favorites.delete');
@@ -26,7 +39,7 @@ Route::get('/profiles/{user}', 'ProfilesController@show')->name('profile');
 Route::get('/profiles/{user}/notifications', 'UserNotificationController@index');
 Route::delete('/profiles/{user}/notifications/{notification}', 'UserNotificationController@destroy');
 
-Route::get('/register/confirm', 'Api\RegisterConfirmationsController@index')->name('register.confirm');
+Route::get('/register/confirm', 'Auth\RegisterConfirmationsController@index')->name('register.confirm');
 
 Route::get('api/users', 'Api\UsersController@index');
 Route::post('api/users/{user}/avatar', 'Api\AvatarsController@store')->middleware('auth')->name('avatar');

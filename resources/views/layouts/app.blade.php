@@ -15,7 +15,7 @@
         window.App = {!! json_encode([
                 'csrfToken' => csrf_token(),
                 'user' => Auth::user(),
-                'Auth' => Auth::check()
+                'signedIn' => Auth::check()
             ]); !!};
     </script>
 
@@ -41,6 +41,7 @@
         [v-cloak] {
             display: none;
         }
+        .ml-a {margin-left: auto;}
     </style>
 </head>
 <body>

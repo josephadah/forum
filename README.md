@@ -17,4 +17,5 @@ An Advance forum with most modern features built with Laravel 5.5 and Vue 2.0^
 - Copy .env.example file to .env and edit database credentials there
 - Run composer install
 - Run php artisan key:generate
-That's it - modify/expand code as you want, add more feature and play around withit.
+- Run php artisan migrate (make sure your your database server is running and connected).
+#### That's it - modify/expand code as you want, add more feature and play around with it.
